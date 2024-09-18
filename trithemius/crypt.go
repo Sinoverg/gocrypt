@@ -12,6 +12,10 @@ var (
 )
 
 func Decrypt(tableSize, text, key string) (string, error) {
+	tableSize = strings.ToLower(tableSize)
+	text = strings.ToLower(text)
+	key = strings.ToLower(key)
+
 	table, err := createTable(tableSize, key)
 	if err != nil {
 		log.Println("Error in encrypt: " + err.Error())
