@@ -18,6 +18,7 @@ func Decrypt(tableSize, text, key string) (string, error) {
 		log.Println("Error in encrypt: " + err.Error())
 		return "", err
 	}
+	log.Println("Table: ", table)
 	encryptedText := text
 	// for decrypt we need to use symbols which upper than our symbol in table
 	// a b c d
@@ -32,11 +33,14 @@ func Decrypt(tableSize, text, key string) (string, error) {
 			for k := range encryptedText {
 				// if we find our symbol in table
 				if table[i][j] == string(encryptedText[k]) {
+					log.Println("Table element = element from encrypted text: ", table[i][j], encryptedText[k])
 					// if we are not in last row
 					if i < len(table)-1 {
+						log.Println("i = ", i)
 						decryptedText += table[i+1][j]
 						// if we are in the first row - we can't use i+1 row, last row
 					} else if i == 0 {
+						log.Println("i = ", i)
 						decryptedText += table[len(table)-1][j]
 						// if something wrong
 					} else {
@@ -46,7 +50,7 @@ func Decrypt(tableSize, text, key string) (string, error) {
 			}
 		}
 	}
-
+	log.Println("Decrypted text: ", decryptedText)
 	return decryptedText, nil
 
 }
@@ -72,6 +76,7 @@ func createTable(tableSize string, key string) ([][]string, error) {
 	for i := range table {
 		table[i] = make([]string, col)
 	}
+	log.Println("Creating table, table: ", table)
 	splitedKey := strings.Split(key, "")
 	k := 0
 	alphabet := make(map[string]bool)
@@ -102,6 +107,7 @@ func createTable(tableSize string, key string) ([][]string, error) {
 			symbolsToPut = append(symbolsToPut, symbol)
 		}
 	}
+	log.Println("Symbols to put: ", symbolsToPut)
 	// now we fill table with other symbols
 	for i := range table {
 		for j := range table[i] {
@@ -111,7 +117,6 @@ func createTable(tableSize string, key string) ([][]string, error) {
 			}
 		}
 	}
-
 	log.Println("Alphabet: ", alphabet)
 	log.Println("Table: ", table)
 	return table, nil
