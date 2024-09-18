@@ -53,9 +53,46 @@ func Decrypt(tableSize, text, key string) (string, error) {
 
 }
 
-// TODO: create encrypt function
 func Encrypt(tableSize, text, key string) (string, error) {
-	return "", nil
+	table, err := createTable(tableSize, key)
+	if err != nil {
+		log.Println("Error in encrypt: " + err.Error())
+		return "", err
+	}
+	// printTable(table)
+	decryptedText := []rune(text)
+	// log.Println("Encrypted text: ", string(encryptedText))
+	// for decrypt we need to use symbols which upper than our symbol in table
+	// a b c d
+	// ^
+	// |
+	// e f g h
+	encryptedText := ""
+	// go through created table
+	for k := range decryptedText {
+		for i := range table {
+			for j := range table[i] {
+				// go through encrypted text
+				// if we find our symbol in table
+				if table[i][j] == decryptedText[k] {
+					// log.Println("Processing ", string(encryptedText[k]), " symbol; table item = ", string(table[i][j]))
+					// if we are not in last row
+					if i == len(table)-1 {
+						// log.Println("first row; i = ", i)
+						encryptedText += string(table[0][j])
+						// log.Println("Adding new item to decrypted text: ", decryptedText)
+						continue
+					}
+					encryptedText += string(table[i+1][j])
+					// log.Println("Adding new item to decrypted text: ", decryptedText)
+					decryptedText = decryptedText[0:]
+				}
+			}
+		}
+	}
+	// log.Println("Decrypted text: ", decryptedText)
+	return encryptedText, nil
+
 }
 
 func createTable(tableSize string, key string) ([][]rune, error) {
