@@ -7,13 +7,18 @@ import (
 	"strings"
 )
 
-func Decrypt() {
-	table, err := createTable(req.TableSize, req.Key)
+const (
+	russianAlphabet = "абвгдежзийклмнопрстуфхцчшщъыьэюя"
+	englishAlphabet = "abcdefghijklmnopqrstuvwxyz"
+)
+
+func Decrypt(tableSize, text, key string) (string, error) {
+	table, err := createTable(tableSize, key)
 	if err != nil {
 		log.Println("Error in encrypt: " + err.Error())
-		return err
+		return "", err
 	}
-	encryptedText := req.Text
+	encryptedText := text
 	// for decrypt we need to use symbols which upper than our symbol in table
 	// a b c d
 	// ^
@@ -42,9 +47,13 @@ func Decrypt() {
 		}
 	}
 
-	rsp.Result = decryptedText
-	return nil
+	return decryptedText, nil
 
+}
+
+// TODO: create encrypt function
+func Encrypt(tableSize, text, key string) (string, error) {
+	return "", nil
 }
 
 func createTable(tableSize string, key string) ([][]string, error) {
