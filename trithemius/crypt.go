@@ -7,9 +7,8 @@ import (
 	"strings"
 )
 
-const (
-	russianAlphabet = "абвгдежзийклмнопрстуфхцчшщъыьэюя"
-	englishAlphabet = "abcdefghijklmnopqrstuvwxyz"
+var (
+	russianAlphabet = []rune{'а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я'}
 )
 
 func Decrypt(tableSize, text, key string) (string, error) {
@@ -18,8 +17,9 @@ func Decrypt(tableSize, text, key string) (string, error) {
 		log.Println("Error in encrypt: " + err.Error())
 		return "", err
 	}
-	log.Println("Table: ", table)
-	encryptedText := text
+	// printTable(table)
+	encryptedText := []rune(text)
+	// log.Println("Encrypted text: ", string(encryptedText))
 	// for decrypt we need to use symbols which upper than our symbol in table
 	// a b c d
 	// ^
@@ -27,30 +27,28 @@ func Decrypt(tableSize, text, key string) (string, error) {
 	// e f g h
 	decryptedText := ""
 	// go through created table
-	for i := range table {
-		for j := range table[i] {
-			// go through encrypted text
-			for k := range encryptedText {
+	for k := range encryptedText {
+		for i := range table {
+			for j := range table[i] {
+				// go through encrypted text
 				// if we find our symbol in table
-				if table[i][j] == string(encryptedText[k]) {
-					log.Println("Table element = element from encrypted text: ", table[i][j], encryptedText[k])
+				if table[i][j] == encryptedText[k] {
+					// log.Println("Processing ", string(encryptedText[k]), " symbol; table item = ", string(table[i][j]))
 					// if we are not in last row
-					if i < len(table)-1 {
-						log.Println("i = ", i)
-						decryptedText += table[i+1][j]
-						// if we are in the first row - we can't use i+1 row, last row
-					} else if i == 0 {
-						log.Println("i = ", i)
-						decryptedText += table[len(table)-1][j]
-						// if something wrong
-					} else {
-						log.Println("WTF, i = ", i)
+					if i == 0 {
+						// log.Println("first row; i = ", i)
+						decryptedText += string(table[len(table)-1][j])
+						// log.Println("Adding new item to decrypted text: ", decryptedText)
+						continue
 					}
+					decryptedText += string(table[i-1][j])
+					// log.Println("Adding new item to decrypted text: ", decryptedText)
+					encryptedText = encryptedText[0:]
 				}
 			}
 		}
 	}
-	log.Println("Decrypted text: ", decryptedText)
+	// log.Println("Decrypted text: ", decryptedText)
 	return decryptedText, nil
 
 }
@@ -60,26 +58,26 @@ func Encrypt(tableSize, text, key string) (string, error) {
 	return "", nil
 }
 
-func createTable(tableSize string, key string) ([][]string, error) {
+func createTable(tableSize string, key string) ([][]rune, error) {
 	size := strings.Split(tableSize, "x")
 	row, err := strconv.Atoi(size[0])
 	if err != nil {
 		log.Println("Error due creating table: " + err.Error())
-		return [][]string{}, fmt.Errorf("Error due creating table: %s", err)
+		return [][]rune{}, fmt.Errorf("Error due creating table: %s", err)
 	}
 	col, err := strconv.Atoi(size[1])
 	if err != nil {
 		log.Println("Error due creating table: " + err.Error())
-		return [][]string{}, fmt.Errorf("Error due creating table: %s", err)
+		return [][]rune{}, fmt.Errorf("Error due creating table: %s", err)
 	}
-	table := make([][]string, row)
+	table := make([][]rune, row)
 	for i := range table {
-		table[i] = make([]string, col)
+		table[i] = make([]rune, col)
 	}
-	log.Println("Creating table, table: ", table)
-	splitedKey := strings.Split(key, "")
+	// printTable(table)
+	splitedKey := []rune(key)
 	k := 0
-	alphabet := make(map[string]bool)
+	alphabet := make(map[rune]bool)
 
 	// putting key symbols in table and add it to alphabet map
 	for i := range table {
@@ -87,37 +85,52 @@ func createTable(tableSize string, key string) ([][]string, error) {
 			if k == len(splitedKey) {
 				break
 			}
+			// log.Println("i = ", i, " j = ", j, " k = ", k, "symbol = ", string(splitedKey[k]), " table[i][j] = ", string(table[i][j]))
+			if _, ok := alphabet[splitedKey[k]]; ok {
+				// log.Println("Symbol alredy in table: ", string(table[i][j]))
+				k++
+				continue
+			}
+			alphabet[splitedKey[k]] = true
 			table[i][j] = splitedKey[k]
-			alphabet[table[i][j]] = true
 			k++
+
 		}
 	}
-	log.Println("Table with key: ", table)
+	// log.Println("Table with key: ", table)
 
 	// filling table with other symbols
-	russianSymbols := strings.Split(russianAlphabet, "")
-	symbolsToPut := make([]string, 0)
+	symbolsToPut := make([]rune, 0)
 
 	// saving russian symbols in slice
 	// and adding them to alphabet
 	// this need for solve problem with position of symbols in table
-	for _, symbol := range russianSymbols {
+	for _, symbol := range russianAlphabet {
 		if _, ok := alphabet[symbol]; !ok {
 			alphabet[symbol] = true
 			symbolsToPut = append(symbolsToPut, symbol)
 		}
 	}
-	log.Println("Symbols to put: ", symbolsToPut)
+	// log.Println("Symbols to put: ", symbolsToPut)
 	// now we fill table with other symbols
 	for i := range table {
 		for j := range table[i] {
-			if table[i][j] == "" {
+			if table[i][j] == 0 {
 				table[i][j] = symbolsToPut[0]
 				symbolsToPut = symbolsToPut[1:]
 			}
 		}
 	}
-	log.Println("Alphabet: ", alphabet)
-	log.Println("Table: ", table)
+	// log.Println("Alphabet: ", alphabet)
+	// log.Println("Table: ", table)
 	return table, nil
+}
+
+func printTable(table [][]rune) {
+	for i := range table {
+		for j := range table[i] {
+			fmt.Print(string(table[i][j]) + " ")
+		}
+		fmt.Println()
+	}
 }
