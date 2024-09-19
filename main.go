@@ -10,7 +10,7 @@ import (
 func main() {
 	var text, key, tableSize string
 	fmt.Scan(&tableSize, &text, &key)
-	result, err := trithemius.Encrypt(tableSize, text, key)
+	result, err := trithemius.Decrypt(tableSize, text, key)
 	if err != nil {
 		log.Fatal(err)
 	}

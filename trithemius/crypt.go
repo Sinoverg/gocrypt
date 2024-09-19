@@ -21,7 +21,7 @@ func Decrypt(tableSize, text, key string) (string, error) {
 		log.Println("Error in encrypt: " + err.Error())
 		return "", err
 	}
-	// printTable(table)
+	printTable(table)
 	encryptedText := []rune(text)
 	// log.Println("Encrypted text: ", string(encryptedText))
 	// for decrypt we need to use symbols which upper than our symbol in table
@@ -58,6 +58,9 @@ func Decrypt(tableSize, text, key string) (string, error) {
 }
 
 func Encrypt(tableSize, text, key string) (string, error) {
+	tableSize = strings.ToLower(tableSize)
+	text = strings.ToLower(text)
+	key = strings.ToLower(key)
 	table, err := createTable(tableSize, key)
 	if err != nil {
 		log.Println("Error in encrypt: " + err.Error())
