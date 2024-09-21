@@ -36,18 +36,19 @@ func Shift(s int, slice []rune) []rune {
 	return nSlice
 }
 
-func EncryptWithShift(text string, slice []rune) string {
+func EncryptWithShift(text string, slice []rune) []rune {
 	text = strings.ToLower(text)
 	tSlice := []rune(text)
-	encrypted := ""
-	fmt.Println("Slice = ", string(slice))
+	encrypted := make([]rune, 0)
+	// fmt.Println("Text = ", text)
+	// fmt.Println("Slice = ", string(slice))
 	for i := range tSlice {
 		if v, ok := russianMapRuneInt[tSlice[i]]; ok {
-			fmt.Printf("put in ecnrypted[%d]:%s value %s\n", i, string(tSlice[i]), string(slice[v]))
-			encrypted += string(slice[v])
+			// fmt.Printf("put in ecnrypted[%d]:%s value %s\n", i, string(tSlice[i]), string(slice[v]))
+			encrypted = append(encrypted, slice[v])
+			continue
 		}
-		encrypted += string(tSlice[i])
-		continue
+		encrypted = append(encrypted, tSlice[i])
 	}
 	return encrypted
 }
@@ -67,8 +68,7 @@ func PrintRuneInt(table map[rune]int) string {
 	}
 	return result
 }
-func NewCaesar(lang string, key int, keyWord string) *Caesar {
-	lang = strings.ToLower(lang)
+func NewCaesar(key int, keyWord string) *Caesar {
 	keyWord = strings.ToLower(keyWord)
 	return &Caesar{
 		Table:   make(map[int]rune),
@@ -114,7 +114,7 @@ func EncryptAffineTable(table map[rune]int, text string) []rune {
 	return encrypted
 }
 
-func (c *Caesar) CreateAffineTable(keyA, keyK int) map[rune]int {
+func CreateAffineTable(keyA, keyK int) map[rune]int {
 
 	// fmt.Printf("Now table: %v\n", PrintIntRune(c.Table))
 	newTable := make(map[rune]int)
@@ -123,7 +123,7 @@ func (c *Caesar) CreateAffineTable(keyA, keyK int) map[rune]int {
 		// fmt.Printf("put in symbol %s with place %d = (%d*%d + %d) mod 32 instead of %d\n", string(i), (keyA*key+keyK)%31, keyA, key, keyK, russianMapRuneInt[i])
 		newTable[i] = (keyA*key + keyK) % 32
 	}
-	fmt.Printf("New table: %v\n", PrintRuneInt(newTable))
+	fmt.Printf("Created affine table: %v\n", PrintRuneInt(newTable))
 
 	return newTable
 }
