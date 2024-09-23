@@ -1,15 +1,14 @@
 package des
 
 import (
-	"fmt"
 	"slices"
 )
 
 type DES struct {
 	key  int
 	Bkey []bool
-	k1   []bool
-	k2   []bool
+	K1   []bool
+	K2   []bool
 }
 
 func NewDES(key int) *DES {
@@ -53,29 +52,48 @@ func PrintD(dslice []bool) (result string) {
 	return
 }
 func (d *DES) Encrypt() {
-	fmt.Println("before P10: ", PrintD(d.Bkey))
+	// fmt.Println("before P10: ", PrintD(d.Bkey))
 	d.P10()
-	fmt.Println("after P10: ", PrintD(d.Bkey))
-	fmt.Println("Left part: ", PrintD(d.Bkey[:5]))
-	fmt.Println("Right part: ", PrintD(d.Bkey[5:]))
+	// fmt.Println("after P10: ", PrintD(d.Bkey))
+	// fmt.Println("Left part: ", PrintD(d.Bkey[:5]))
+	// fmt.Println("Right part: ", PrintD(d.Bkey[5:]))
 	fPart := d.Bkey[:5]
 	sPart := d.Bkey[5:]
-	fmt.Println("First part before <<1: ", PrintD(fPart))
-	fPart = createBkey(bToInt(fPart) << 1)
-	fmt.Println("First part after <<1: ", PrintD(fPart))
-	fmt.Println("Second part before <<1: ", PrintD(sPart))
-	sPart = createBkey(bToInt(sPart) << 1)
-	fmt.Println("Second part before <<1: ", PrintD(sPart))
-	fmt.Println("before P8: ", PrintD(d.Bkey))
+	// fmt.Println("First part before <<1: ", PrintD(fPart))
+	fPart = d.lShift(1, fPart)
+	// fmt.Println("First part after <<1: ", PrintD(fPart))
+	// fmt.Println("Second part before <<1: ", PrintD(sPart))
+	sPart = d.lShift(1, sPart)
+	// fmt.Println("Second part after <<1: ", PrintD(sPart))
+	// fmt.Println("before P8: ", PrintD(d.Bkey))
 	nBkey := append(fPart, sPart...)
 	b8key := d.P8(nBkey)
-	fmt.Println("after P8: ", b8key)
-	fmt.Println("new K1: ", b8key)
-	d.k1 = b8key
-
+	// fmt.Println("after P8: ", PrintD(b8key))
+	// fmt.Println("new K1: ", PrintD(b8key))
+	d.K1 = b8key
+	// fmt.Println("First part before <<2: ", PrintD(fPart))
+	fPart = d.lShift(2, fPart)
+	// fmt.Println("First part after <<2: ", PrintD(fPart))
+	// fmt.Println("Second part before <<2: ", PrintD(sPart))
+	sPart = d.lShift(2, sPart)
+	// fmt.Println("Second part after <<2: ", PrintD(sPart))
+	d.K2 = d.P8(append(fPart, sPart...))
+	// fmt.Println("new K2: ", PrintD(d.K2))
 }
-func (d *DES) lShift(shift int) {
-
+func (d *DES) lShift(shift int, s []bool) []bool {
+	r := make([]bool, len(s))
+	for i := range s {
+		if i == len(r)-1 {
+			r[i] = s[0]
+			continue
+		}
+		r[i] = s[i+1]
+	}
+	shift--
+	if shift >= 1 {
+		return d.lShift(shift, r)
+	}
+	return r
 }
 func (d *DES) P8(bk []bool) []bool {
 	p8Pattern := []int{6, 3, 7, 4, 8, 5, 10, 9}
