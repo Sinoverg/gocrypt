@@ -1,6 +1,7 @@
 package des
 
 import (
+	"fmt"
 	"slices"
 )
 
@@ -11,15 +12,70 @@ type DES struct {
 	K2   []bool
 }
 
+func (d *DES) Encrypt(text []byte) {
+	for _, symbol := range text {
+		sl := toBoolSlice(int(symbol))
+		// divide on two parts
+		fPart, sPart := divide(sl)
+		fmt.Printf("First part: %s; Second part: %s\n", PrintD(fPart), PrintD(sPart))
+		// extentend right part
+
+	}
+}
+
+func (d *DES) f(xr []bool) {
+	//extend xr to 8 bits
+	xr = extension(xr)
+	// xor
+	xr = xor(xr, d.K1)
+	// divide on 2 parts
+	// fPart, sPart := divide(xr)
+	// s1 & s2
+
+}
+func s1(b []bool) []bool {
+	s1 := [][]int{
+		{1, 0, 3, 2},
+		{3, 2, 1, 0},
+		{0, 2, 1, 3},
+		{3, 1, 3, 2},
+	}
+	a14 := []bool{b[0], b[3]}
+	a23 := []bool{b[1], b[2]}
+	return toBoolSlice(s1[bToInt(a14)][bToInt(a23)])
+}
+
+func xor(f []bool, s []bool) []bool {
+	result := make([]bool, 0)
+	for i := range result {
+		if f[i] != s[i] {
+			result = append(result, true)
+			continue
+		}
+		result = append(result, false)
+	}
+	return result
+}
+
+func extension(b []bool) []bool {
+	return []bool{b[3], b[0], b[1], b[2], b[1], b[2], b[3], b[1]}
+}
+
+func divide(b []bool) ([]bool, []bool) {
+	fmt.Printf("B: %d\n", bToInt(b))
+	fmt.Println(PrintD(b))
+	return b[:len(b)/2+1], b[len(b)/2:]
+}
+
 func NewDES(key int) *DES {
-	Bkey := createBkey(key)
+	Bkey := toBoolSlice(key)
 	return &DES{
 		key:  key,
 		Bkey: Bkey,
 	}
 }
 
-func createBkey(key int) []bool {
+func toBoolSlice(key int) []bool {
 	bits := make([]bool, 0)
 	for key != 0 {
 		bits = append(bits, key&1 == 1)
@@ -51,7 +107,7 @@ func PrintD(dslice []bool) (result string) {
 	}
 	return
 }
-func (d *DES) Encrypt() {
+func (d *DES) GenerateKeys() {
 	// fmt.Println("before P10: ", PrintD(d.Bkey))
 	d.P10()
 	// fmt.Println("after P10: ", PrintD(d.Bkey))
