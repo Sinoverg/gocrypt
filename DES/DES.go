@@ -13,25 +13,75 @@ type DES struct {
 }
 
 func (d *DES) Encrypt(text []byte) {
+	fmt.Println("Start encryption")
+	result := make([]byte, 0)
 	for _, symbol := range text {
+		fmt.Println("Start encrypt symbol: ", symbol, ":", string(symbol))
 		sl := toBoolSlice(int(symbol))
+		fmt.Println("Bool slice from symbol: ", sl)
+		// shufle
+		fmt.Println("Before IP shufle: ", PrintD(sl))
+		sl = IPshufle(sl)
+		fmt.Println("After IP shufle: ", PrintD(sl))
 		// divide on two parts
+		fmt.Println("Dividing on two parts: ", PrintD(sl))
 		fPart, sPart := divide(sl)
-		fmt.Printf("First part: %s; Second part: %s\n", PrintD(fPart), PrintD(sPart))
-		// extentend right part
+		fmt.Println("First part: ", PrintD(fPart))
+		fmt.Println("Second part: ", PrintD(sPart))
 
+		fmt.Println("Process F function with K1 key")
+		fK1Result := f(sPart, d.K1)
+		fmt.Println("F function result = ", PrintD(fK1Result))
+		fK1XorFpart := xor(fPart, fK1Result)
+		fmt.Println("F xor Fpart = ", PrintD(fK1XorFpart))
+
+		fmt.Println("Process F function with K2 key")
+		fK2Result := f(fK1XorFpart, d.K2)
+		fmt.Println("F function result = ", PrintD(fK2Result))
+		fK2XorSpart := xor(sPart, fK2Result)
+		fmt.Println("F xor Spart = ", PrintD(fK2XorSpart))
+
+		fmt.Println("Process IP-1 shufle")
+		encryptResult := IPmin1shufle(append(fK1XorFpart, fK2XorSpart...))
+		fmt.Println("IP-1 shufle result = ", PrintD(encryptResult))
+
+		fmt.Println("Encrypt result = ", encryptResult)
+		result = append(result, byte(bToInt(encryptResult)))
 	}
+	fmt.Println("Encryption result = ", result)
+	fmt.Println("Encrypted text = ", string(result))
+}
+func IPshufle(b []bool) []bool {
+	return []bool{b[1], b[5], b[2], b[0], b[3], b[7], b[4], b[6]}
+}
+func IPmin1shufle(b []bool) []bool {
+	return []bool{b[3], b[0], b[2], b[4], b[6], b[1], b[7], b[5]}
 }
 
-func (d *DES) f(xr []bool) {
+func f(xr []bool, key []bool) []bool {
 	//extend xr to 8 bits
+	fmt.Println("Extending XR: ", PrintD(xr))
 	xr = extension(xr)
+	fmt.Println("Extended XR: ", PrintD(xr))
 	// xor
-	xr = xor(xr, d.K1)
+	fmt.Println("XR xor K: ", PrintD(xr), PrintD(key))
+	xr = xor(xr, key)
+	fmt.Println("XR xor K = ", PrintD(xr))
 	// divide on 2 parts
-	// fPart, sPart := divide(xr)
+	fmt.Println("Dividing on 2 parts: ", PrintD(xr))
+	fPart, sPart := divide(xr)
+	fmt.Println("First part: ", PrintD(fPart))
+	fmt.Println("Second part: ", PrintD(sPart))
 	// s1 & s2
+	fPart, sPart = s1(fPart), s2(sPart)
+	fmt.Println("S1 and S2 = ", PrintD(fPart), PrintD(sPart))
+	// P
+	fmt.Println("F result: ", PrintD(reshafleP(fPart, sPart)))
+	return reshafleP(fPart, sPart)
 
+}
+func reshafleP(f, s []bool) []bool {
+	return []bool{f[1], s[1], s[0], f[0]}
 }
 func s1(b []bool) []bool {
 	s1 := [][]int{
@@ -42,18 +92,56 @@ func s1(b []bool) []bool {
 	}
 	a14 := []bool{b[0], b[3]}
 	a23 := []bool{b[1], b[2]}
-	return toBoolSlice(s1[bToInt(a14)][bToInt(a23)])
+	// fmt.Println("a14 = ", a14, "a23 = ", a23)
+	// fmt.Println("s1[", bToInt(a14), "] = ", s1[bToInt(a14)])
+	// fmt.Printf("%d = %b", s1[bToInt(a14)][bToInt(a23)], s1[bToInt(a14)][bToInt(a23)])
+	s := fmt.Sprintf("%b", s1[bToInt(a14)][bToInt(a23)])
+	// fmt.Println("s: ", s)
+	if len(s) == 1 {
+		s = "0" + s
+	}
+	// fmt.Println("Returning: ", s)
+	return sToB(s)
+}
+func s2(b []bool) []bool {
+	s2 := [][]int{
+		{1, 1, 2, 3},
+		{2, 0, 1, 3},
+		{3, 0, 1, 0},
+		{2, 1, 0, 3},
+	}
+	a14 := []bool{b[0], b[3]}
+	a23 := []bool{b[1], b[2]}
+	s := fmt.Sprintf("%b", s2[bToInt(a14)][bToInt(a23)])
+	if len(s) == 1 {
+		s = "0" + s
+	}
+	return sToB(s)
+}
+func sToB(s string) (result []bool) {
+	for _, e := range s {
+		if e == '1' {
+			result = append(result, true)
+		} else {
+			result = append(result, false)
+		}
+	}
+	return
 }
 
 func xor(f []bool, s []bool) []bool {
+	fmt.Println("XOR: ", PrintD(f), PrintD(s))
 	result := make([]bool, 0)
-	for i := range result {
+	for i := range len(s) {
 		if f[i] != s[i] {
 			result = append(result, true)
+			// fmt.Println("True XOR result: ", PrintD(result))
 			continue
 		}
+		// fmt.Println("False XOR result: ", PrintD(result))
 		result = append(result, false)
 	}
+	// fmt.Println("XOR result: ", PrintD(result))
 	return result
 }
 
@@ -62,9 +150,9 @@ func extension(b []bool) []bool {
 }
 
 func divide(b []bool) ([]bool, []bool) {
-	fmt.Printf("B: %d\n", bToInt(b))
-	fmt.Println(PrintD(b))
-	return b[:len(b)/2+1], b[len(b)/2:]
+	// fmt.Printf("B: %d\n", bToInt(b))
+	// fmt.Println(PrintD(b))
+	return b[:len(b)/2], b[len(b)/2:]
 }
 
 func NewDES(key int) *DES {
@@ -89,10 +177,10 @@ func (d *DES) P10() {
 	p10Result := make([]bool, 0)
 	for _, i := range p10Pattern {
 		i--
-		// log.Println("Putting ", d.Bkey[i], " to ", i, " place")
+		// fmt.Println("Putting ", d.Bkey[i], " to ", i, " place")
 		p10Result = append(p10Result, d.Bkey[i])
 	}
-	// log.Println("p10Result: ", p10Result)
+	// fmt.Println("p10Result: ", p10Result)
 	d.Bkey = p10Result
 
 }
@@ -160,6 +248,8 @@ func (d *DES) P8(bk []bool) []bool {
 	return nBkey
 }
 func bToInt(b []bool) int {
+	// fmt.Print("b = ", b)
+	slices.Reverse(b)
 	result := 0
 	for i := len(b) - 1; i >= 0; i-- {
 		result <<= 1
@@ -167,5 +257,7 @@ func bToInt(b []bool) int {
 			result |= 1
 		}
 	}
+	// fmt.Print("; result = ", result)
+	// fmt.Println("bToInt return: ", result)
 	return result
 }

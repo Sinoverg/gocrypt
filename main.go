@@ -11,8 +11,7 @@ func main() {
 	d := des.NewDES(a)
 	d.GenerateKeys()
 	// fmt.Printf("Key K1 = %s\nKey K2 = %s", des.PrintD(d.K1), des.PrintD(d.K2))
-	var t string
-	fmt.Scan(&t)
+	t := "ИСС"
 	b := []byte(t)
 	fmt.Println(b)
 	d.Encrypt(b)
