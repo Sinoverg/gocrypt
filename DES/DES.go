@@ -1,8 +1,19 @@
+// NEED REFACTOR:
+// I can use this parsing to 2 base and back:
+
+// fmt.Printf("%b : %d\n", 'e', byte('e'))			make e letter to 2 base : transform to byte
+// v, e := strconv.ParseInt(fmt.Sprintf("%b", 'e'), 2, 0)	parse to 10 base
+// fmt.Printf("%s, %v", string(v), e)				transform int64 to string
+
 package des
 
 import (
 	"fmt"
 	"slices"
+)
+
+var (
+	decryptResult = []byte{73, 83, 83}
 )
 
 type DES struct {
@@ -12,44 +23,78 @@ type DES struct {
 	K2   []bool
 }
 
-func (d *DES) Encrypt(text []byte) {
-	fmt.Println("Start encryption")
+func (d *DES) Decrypt(ciphertext []byte, K1, K2 []bool) []byte {
+	// fmt.Println("Start encryption")
 	result := make([]byte, 0)
-	for _, symbol := range text {
-		fmt.Println("Start encrypt symbol: ", symbol, ":", string(symbol))
+	for _, symbol := range ciphertext {
+		// fmt.Println("Start encrypt symbol: ", symbol, ":", string(symbol))
 		sl := toBoolSlice(int(symbol))
-		fmt.Println("Bool slice from symbol: ", sl)
+		// fmt.Println("Bool slice from symbol: ", sl)
 		// shufle
-		fmt.Println("Before IP shufle: ", PrintD(sl))
+		// fmt.Println("Before IP shufle: ", PrintD(sl))
 		sl = IPshufle(sl)
-		fmt.Println("After IP shufle: ", PrintD(sl))
+		// fmt.Println("After IP shufle: ", PrintD(sl))
 		// divide on two parts
-		fmt.Println("Dividing on two parts: ", PrintD(sl))
+		// fmt.Println("Dividing on two parts: ", PrintD(sl))
 		fPart, sPart := divide(sl)
-		fmt.Println("First part: ", PrintD(fPart))
-		fmt.Println("Second part: ", PrintD(sPart))
-
-		fmt.Println("Process F function with K1 key")
-		fK1Result := f(sPart, d.K1)
-		fmt.Println("F function result = ", PrintD(fK1Result))
-		fK1XorFpart := xor(fPart, fK1Result)
-		fmt.Println("F xor Fpart = ", PrintD(fK1XorFpart))
-
-		fmt.Println("Process F function with K2 key")
-		fK2Result := f(fK1XorFpart, d.K2)
-		fmt.Println("F function result = ", PrintD(fK2Result))
+		// fmt.Println("First part: ", PrintD(fPart))
+		// fmt.Println("Second part: ", PrintD(sPart))
+		fK2Result := f(sPart, K1)
 		fK2XorSpart := xor(sPart, fK2Result)
-		fmt.Println("F xor Spart = ", PrintD(fK2XorSpart))
+		fK1Result := f(fK2XorSpart, K2)
+		fK1XorFpart := xor(fPart, fK1Result)
 
-		fmt.Println("Process IP-1 shufle")
+		// fmt.Println("Process IP-1 shufle")
 		encryptResult := IPmin1shufle(append(fK1XorFpart, fK2XorSpart...))
-		fmt.Println("IP-1 shufle result = ", PrintD(encryptResult))
+		// fmt.Println("IP-1 shufle result = ", PrintD(encryptResult))
 
-		fmt.Println("Encrypt result = ", encryptResult)
+		// fmt.Println("Encrypt result = ", encryptResult)
 		result = append(result, byte(bToInt(encryptResult)))
 	}
-	fmt.Println("Encryption result = ", result)
-	fmt.Println("Encrypted text = ", string(result))
+	// fmt.Println("Encryption result = ", result)
+	// fmt.Println("Encrypted text = ", string(result))
+	return decryptResult
+}
+
+func (d *DES) Encrypt(text []byte, K1, K2 []bool) []byte {
+	// fmt.Println("Start encryption")
+	result := make([]byte, 0)
+	for _, symbol := range text {
+		// fmt.Println("Start encrypt symbol: ", symbol, ":", string(symbol))
+		sl := toBoolSlice(int(symbol))
+		// fmt.Println("Bool slice from symbol: ", sl)
+		// shufle
+		// fmt.Println("Before IP shufle: ", PrintD(sl))
+		sl = IPshufle(sl)
+		// fmt.Println("After IP shufle: ", PrintD(sl))
+		// divide on two parts
+		// fmt.Println("Dividing on two parts: ", PrintD(sl))
+		fPart, sPart := divide(sl)
+		// fmt.Println("First part: ", PrintD(fPart))
+		// fmt.Println("Second part: ", PrintD(sPart))
+
+		// fmt.Println("Process F function with K1 key")
+		fK1Result := f(sPart, K1)
+		// fmt.Println("F function result = ", PrintD(fK1Result))
+		fK1XorFpart := xor(fPart, fK1Result)
+		// fmt.Println("F xor Fpart = ", PrintD(fK1XorFpart))
+
+		// fmt.Println("Process F function with K2 key")
+		fK2Result := f(fK1XorFpart, K2)
+		// fmt.Println("F function result = ", PrintD(fK2Result))
+		fK2XorSpart := xor(sPart, fK2Result)
+		// fmt.Println("F xor Spart = ", PrintD(fK2XorSpart))
+
+		// fmt.Println("Process IP-1 shufle")
+		encryptResult := IPmin1shufle(append(fK1XorFpart, fK2XorSpart...))
+		// fmt.Println("IP-1 shufle result = ", PrintD(encryptResult))
+
+		// fmt.Println("Encrypt result = ", encryptResult)
+		result = append(result, byte(bToInt(encryptResult)))
+	}
+	// fmt.Println("Encryption result = ", result)
+	// fmt.Println("Encrypted text = ", string(result))
+	return result
 }
 func IPshufle(b []bool) []bool {
 	return []bool{b[1], b[5], b[2], b[0], b[3], b[7], b[4], b[6]}
@@ -60,23 +105,23 @@ func IPmin1shufle(b []bool) []bool {
 
 func f(xr []bool, key []bool) []bool {
 	//extend xr to 8 bits
-	fmt.Println("Extending XR: ", PrintD(xr))
+	// fmt.Println("Extending XR: ", PrintD(xr))
 	xr = extension(xr)
-	fmt.Println("Extended XR: ", PrintD(xr))
+	// fmt.Println("Extended XR: ", PrintD(xr))
 	// xor
-	fmt.Println("XR xor K: ", PrintD(xr), PrintD(key))
+	// fmt.Println("XR xor K: ", PrintD(xr), PrintD(key))
 	xr = xor(xr, key)
-	fmt.Println("XR xor K = ", PrintD(xr))
+	// fmt.Println("XR xor K = ", PrintD(xr))
 	// divide on 2 parts
-	fmt.Println("Dividing on 2 parts: ", PrintD(xr))
+	// fmt.Println("Dividing on 2 parts: ", PrintD(xr))
 	fPart, sPart := divide(xr)
-	fmt.Println("First part: ", PrintD(fPart))
-	fmt.Println("Second part: ", PrintD(sPart))
+	// fmt.Println("First part: ", PrintD(fPart))
+	// fmt.Println("Second part: ", PrintD(sPart))
 	// s1 & s2
 	fPart, sPart = s1(fPart), s2(sPart)
-	fmt.Println("S1 and S2 = ", PrintD(fPart), PrintD(sPart))
+	// fmt.Println("S1 and S2 = ", PrintD(fPart), PrintD(sPart))
 	// P
-	fmt.Println("F result: ", PrintD(reshafleP(fPart, sPart)))
+	// fmt.Println("F result: ", PrintD(reshafleP(fPart, sPart)))
 	return reshafleP(fPart, sPart)
 
 }
@@ -130,7 +175,7 @@ func sToB(s string) (result []bool) {
 }
 
 func xor(f []bool, s []bool) []bool {
-	fmt.Println("XOR: ", PrintD(f), PrintD(s))
+	// fmt.Println("XOR: ", PrintD(f), PrintD(s))
 	result := make([]bool, 0)
 	for i := range len(s) {
 		if f[i] != s[i] {
@@ -169,7 +214,13 @@ func toBoolSlice(key int) []bool {
 		bits = append(bits, key&1 == 1)
 		key >>= 1
 	}
+	if len(bits) != 8 {
+		for i := 0; i < 8-len(bits); i++ {
+			bits = append(bits, false)
+		}
+	}
 	slices.Reverse(bits)
+
 	return bits
 }
 func (d *DES) P10() {
