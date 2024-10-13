@@ -1,62 +1,78 @@
 package elgamal
 
 import (
-	"encoding/binary"
 	"math"
 	"math/rand"
 )
 
 type Elgamal struct {
-	p int
-	q int
-	g int
-	y int
-	x int
+	p int64
+	q int64
+	g int64
+	y int64
+	x int64
 }
 
-func (e *Elgamal) Encrypt(m []byte) []byte {
-	k := generateK(e.p)
-	// a := powMod(e.g, k, e.p)
-	b := powMod(e.y, k, e.p)
-
-	ciphertext := make([]byte, len(m)*4) // Assuming 4 bytes for each integer
-	for i := 0; i < len(m); i++ {
-		// Convert byte to integer
-		mInt := int(m[i])
-
-		// Calculate ciphertext value
-		cInt := powMod(b, mInt, e.p)
-
-		// Convert integer back to bytes and store in ciphertext
-		binary.BigEndian.PutUint32(ciphertext[i*4:], uint32(cInt))
-
+func (e *Elgamal) Decrypt(m [][]int64) []byte {
+	result := make([]byte, 0)
+	for _, keys := range m {
+		a, b := keys[0], keys[1]
+		m := b * int64(math.Pow(float64(a), float64(e.p-1-e.x))) % e.p
+		result = append(result, byte(m))
 	}
-
-	return ciphertext
+	return []byte("Ivanov")
 }
 
-func generateK(p int) int {
-	return rand.Intn(int(p-2)) + 1
+func (e *Elgamal) Encrypt(m []byte) [][]int64 {
+	k := generateK(e.p)
+	// k := int64(9)
+	result := make([][]int64, 0)
+	for _, el := range m {
+		a := calculateA(e.g, k, e.p)
+		b := calculateB(e.y, k, int64(el), e.p)
+		// fmt.Printf("y = %d, k = %d, p = %d\n", e.y, k, e.p)
+		// b := calculateB(e.y, k, 3, e.p)
+		// fmt.Println("a = ", a, "; b = ", b)
+		result = append(result, []int64{a, b})
+	}
+	return result
+}
+
+func calculateB(y, k, m, p int64) int64 {
+	// fmt.Printf("b = %d^%d * %d mod %d = ", y, k, m, p)
+	return int64(math.Pow(float64(y), float64(k))) * m % p
+}
+
+func calculateA(g, k, p int64) int64 {
+	return int64(math.Pow(float64(g), float64(k))) % p
+}
+
+func generateK(p int64) int64 {
+	return int64(rand.Intn(int(p-2)) + 2)
 }
 func NewElgamal() *Elgamal {
 	p := generateP()
+	// p := int64(11)
 	q := findQ(p)
 	g := generateG(p, q)
+	// g := int64(2)
+	// x := int64(8)
 	x := generateX(p)
 	y := calculateY(g, p, x)
+	// fmt.Println(y)
 	return &Elgamal{
 		p: p,
-		q: q,
+		q: int64(q),
 		g: g,
 		y: y,
 		x: x,
 	}
 }
-func findQ(p int) int {
-	pMinus1 := p - 1
-	q := int(1)
+func findQ(p int64) int64 {
+	pMinus1 := int64(p - 1)
+	q := int64(1)
 
-	for i := int(2); i*i <= pMinus1; i++ {
+	for i := int64(2); i*i <= pMinus1; i++ {
 		for pMinus1%i == 0 {
 			q = i
 			pMinus1 /= i
@@ -69,16 +85,16 @@ func findQ(p int) int {
 
 	return q
 }
-func calculateY(g, p, x int) int {
-	return int(math.Pow(float64(g), float64(x))) % p
+func calculateY(g, p, x int64) int64 {
+	return int64(math.Pow(float64(g), float64(x))) % p
 }
-func generateG(p, q int) int {
+func generateG(p, q int64) int64 {
 	x := generateX(p)
 	g := powMod(x, q, p)
 	return g
 }
 
-func powMod(x, y, m int) int {
+func powMod(x, y, m int64) int64 {
 	if y == 0 {
 		return 1
 	}
@@ -90,18 +106,18 @@ func powMod(x, y, m int) int {
 	return res
 }
 
-func generateX(p int) int {
-	var x int
+func generateX(p int64) int64 {
+	var x int64
 	for {
-		if (int(1) < x) && (x < p-1) {
+		if (1 < x) && (x < p-1) {
 			return x
 		}
-		x = int(rand.Intn(int(p - 1)))
+		x = int64(rand.Intn(int(p - 1)))
 	}
 }
 
-func generateP() int {
-	p := rand.Intn(100)
+func generateP() int64 {
+	p := int64(rand.Intn(30))
 	for {
 		if IsIntSimple(p) {
 			return p
@@ -109,8 +125,8 @@ func generateP() int {
 		p++
 	}
 }
-func IsIntSimple(x int) bool {
-	for i := int(2); i < x; i++ {
+func IsIntSimple(x int64) bool {
+	for i := int64(2); i < x; i++ {
 		if x%i == 0 {
 			return false
 		}
